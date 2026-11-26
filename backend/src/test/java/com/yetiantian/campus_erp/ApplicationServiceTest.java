@@ -91,4 +91,18 @@ public class ApplicationServiceTest {
 
     }
 
+    @Test
+    void 结算允许零元() {
+        Project p = projectRepository.save(new Project("零元项目", new BigDecimal("1000")));
+        Member m = memberRepository.save(new Member("测试成员", "成员"));
+        Application app = service.submit(p.getId(), m.getId(), "测试零元", new BigDecimal("100"));
+
+        service.approve(app.getId(), new BigDecimal("100"));
+        service.settle(app.getId(), BigDecimal.ZERO);
+
+        Application u = applicationRepository.findById(app.getId()).orElseThrow();
+        assertThat(u.getState()).isEqualTo(State.SETTLED);
+        assertThat(u.getActualAmount()).isEqualByComparingTo("0");
+    }
+
 }
