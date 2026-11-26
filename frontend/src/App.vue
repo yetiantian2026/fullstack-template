@@ -5,6 +5,7 @@ const projectId = 1
 const applicantId = 1
 
 const list = ref([])
+const summary = ref(null)
 const loading = ref(true)
 const error = ref('')
 const message = ref('')
@@ -35,6 +36,7 @@ async function load() {
   error.value = ''
   try {
     list.value = await api(`/api/applications?projectId=${projectId}`)
+        summary.value = await api(`/api/projects/${projectId}/summary`)
   } catch (e) {
     error.value = e.message
   } finally {
@@ -117,6 +119,12 @@ onMounted(load)
 <template>
   <div class="page">
     <h1>经费申请 · 项目 {{ projectId }}</h1>
+        <div v-if="summary" class="summary">
+      <span>总额 <b>{{ summary.total }}</b></span>
+      <span>可用 <b>{{ summary.available }}</b></span>
+      <span>冻结 <b>{{ summary.frozen }}</b></span>
+      <span>已用 <b>{{ summary.used }}</b></span>
+    </div>
 
     <section class="form">
       <input v-model="form.purpose" placeholder="用途" />
@@ -188,4 +196,15 @@ tbody tr:nth-child(even) { background: #fafafa; }
 .msg { color: #060; margin: 8px 0; }
 .msg.error { color: #c00; }
 .tip { color: #666; }
+.summary {
+  display: flex;
+  gap: 28px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #f8f8f8;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  font-size: 14px;
+}
+.summary b { font-size: 16px; color: #333; }
 </style>

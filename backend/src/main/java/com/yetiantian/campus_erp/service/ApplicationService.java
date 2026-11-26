@@ -4,6 +4,7 @@ import com.yetiantian.campus_erp.domain.Application;
 import com.yetiantian.campus_erp.domain.Member;
 import com.yetiantian.campus_erp.domain.Project;
 import com.yetiantian.campus_erp.domain.State;
+import com.yetiantian.campus_erp.dto.ProjectSummary;
 import com.yetiantian.campus_erp.repository.ApplicationRepository;
 import com.yetiantian.campus_erp.repository.MemberRepository;
 import com.yetiantian.campus_erp.repository.ProjectRepository;
@@ -162,5 +163,17 @@ public class ApplicationService {
             }
         }
         return sum;
+    }
+
+    public ProjectSummary summary(Long projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("项目不存在"));
+
+        BigDecimal frozen = sumFrozen(projectId);
+        BigDecimal used = sumUsed(projectId);
+        BigDecimal available = project.getTotalAmount().subtract(frozen).subtract(used);
+
+        return new ProjectSummary(project.getId(), project.getName(),
+                project.getTotalAmount(), frozen, used, available);
     }
 }
