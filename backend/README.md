@@ -1,6 +1,6 @@
 # 后端工程
 
-页面发出请求后，后端负责接收和处理，再把结果返回给前端。后端工程放在这里，固定使用 Spring Boot。当前尚未初始化，项目流程和 Git 规范见[根 README](../README.md)。
+页面发出请求后，后端负责接收和处理，再把结果返回给前端。后端工程放在这里，固定使用 Spring Boot。本工程已完成初始化并接入数据库，项目流程和 Git 规范见[根 README](../README.md)。项目流程和 Git 规范见[根 README](../README.md)。
 
 刚学 Java 或 SQL 时，可以先保存能独立运行的类、建表和查询练习，写明运行方式。学到框架后再整理到 Spring Boot 工程，不必先完成全部前端或 PR 练习。
 
@@ -44,3 +44,70 @@ JDK 是 Java 开发工具包。后端工程需要兼容的 JDK 和构建工具�
 
 - [Spring Boot 官方文档](https://docs.spring.io/spring-boot/index.html)
 - [Spring Initializr 工程生成器](https://start.spring.io/)
+
+## 实际运行说明
+
+### 环境
+
+| 项目 | 版本 |
+|---|---|
+| JDK | 25（Zulu 25.0.5） |
+| Spring Boot | 4.2.0 |
+| 构建工具 | Maven Wrapper（`mvnw`，无需单独安装 Maven） |
+| 数据库 | MySQL 8.0 |
+
+### 数据库准备
+
+在仓库根目录的 `sql/` 下，按顺序执行：
+
+1. `schema.sql` —— 创建 `campus_erp` 数据库与四张表
+2. `seed.sql` —— 插入测试数据
+
+`schema.sql` 开头有 `DROP TABLE IF EXISTS`，重复执行会清空数据。
+
+### 配置
+
+数据库口令通过环境变量注入，不写入仓库：
+
+    $env:DB_PASSWORD = "你的 MySQL 口令"
+
+对应 `src/main/resources/application.properties` 中的
+`spring.datasource.password=${DB_PASSWORD}`。
+
+### 启动
+
+在本目录执行：
+
+    .\mvnw.cmd spring-boot:run
+
+启动成功的日志应包含：
+
+    Started CampusErpApplication in x.xxx seconds
+
+服务监听 `http://localhost:8080`。未配置的路由返回 404 页面，属正常现象。
+
+### 测试
+
+    .\mvnw.cmd test
+
+当前测试覆盖：提交申请、批准金额超限、驳回后释放冻结、结算金额校验。
+
+### 接口
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| POST | `/api/applications` | 提交申请 |
+| GET | `/api/applications?projectId=` | 按项目查询申请列表 |
+| GET | `/api/applications/{id}` | 查询单条申请 |
+| POST | `/api/applications/{id}/approve` | 批准，可减额 |
+| POST | `/api/applications/{id}/settle` | 结算实际花费 |
+| POST | `/api/applications/{id}/reject` | 驳回 |
+| POST | `/api/applications/{id}/cancel` | 取消 |
+| GET | `/api/projects/{id}/summary` | 项目经费摘要 |
+
+失败时统一返回 HTTP 400 与 `{"error": "原因"}`。
+
+### 尚未完成
+
+- 未接入登录，申请人 ID 由请求参数给出，后端未校验"只能操作本人申请"
+- 并发申请同一笔预算未加锁处理

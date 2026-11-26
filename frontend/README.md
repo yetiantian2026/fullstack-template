@@ -56,3 +56,19 @@ JavaScript 和 TypeScript 都可以。TypeScript 额外提供类型检查能力�
 npm install # 安装依赖
 npm run dev # 开发启动，默认 http://localhost:5173
 npm run build # 构建产物到 dist/
+
+##与后端的连接方式
+
+前端不直接请求 `http://localhost:8080`，而是由 Vite 代理转发，避免浏览器的跨域限制。
+
+`vite.config.js` 中的配置：
+
+```js
+server: {
+  proxy: {
+    '/api': {
+      target: 'http://localhost:8080',
+      changeOrigin: true,
+    },
+  },
+}
