@@ -3,6 +3,7 @@ import com.yetiantian.campus_erp.domain.Application;
 import com.yetiantian.campus_erp.domain.Member;
 import com.yetiantian.campus_erp.domain.Project;
 import com.yetiantian.campus_erp.domain.State;
+import com.yetiantian.campus_erp.exception.ForbiddenException;
 import com.yetiantian.campus_erp.repository.ApplicationRepository;
 import com.yetiantian.campus_erp.repository.MemberRepository;
 import com.yetiantian.campus_erp.repository.ProjectRepository;
@@ -103,6 +104,14 @@ public class ApplicationServiceTest {
         Application u = applicationRepository.findById(app.getId()).orElseThrow();
         assertThat(u.getState()).isEqualTo(State.SETTLED);
         assertThat(u.getActualAmount()).isEqualByComparingTo("0");
+    }
+
+    private Member currentUser(Long userId) {
+        if (userId == null) {
+            throw new ForbiddenException("缺少身份信息");
+        }
+        return memberRepository.findById(userId)
+                .orElseThrow(() -> new ForbiddenException("用户不存在"));
     }
 
 }

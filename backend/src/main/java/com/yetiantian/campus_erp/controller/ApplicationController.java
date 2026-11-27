@@ -18,13 +18,14 @@ public class ApplicationController {
     }
 
     // 请求体
-    public record SubmitRequest(Long projectId, Long applicantId, String purpose, BigDecimal amount) { }
+    public record SubmitRequest(Long projectId, String purpose, BigDecimal amount) { }
     public record AmountRequest(BigDecimal amount) { }
     public record ReasonRequest(String reason) { }
 
     @PostMapping
-    public Application submit(@RequestBody SubmitRequest req) {
-        return service.submit(req.projectId(), req.applicantId(), req.purpose(), req.amount());
+    public Application submit(@RequestHeader("X-User-Id") Long userId,
+                              @RequestBody SubmitRequest req) {
+        return service.submit(req.projectId(), userId, req.purpose(), req.amount());
     }
 
     @PostMapping("/{id}/approve")

@@ -1,11 +1,13 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted,watch } from 'vue'
 
 const projectId = 1
 const applicantId = 1
 
 const list = ref([])
 const summary = ref(null)
+const members = ref([])
+const currentUserId = ref(null)
 const loading = ref(true)
 const error = ref('')
 const message = ref('')
@@ -23,8 +25,14 @@ const stateText = {
   CANCELED: '已取消',
 }
 
-async function api(url, options) {
-  const res = await fetch(url, options)
+async function api(url, options = {}) {
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      'X-User-Id': String(currentUserId.value ?? ''),
+      ...(options.headers || {}),
+    },
+  })
   const text = await res.text()
   const data = text ? JSON.parse(text) : null
   if (!res.ok) throw new Error(data?.error || `请求失败：${res.status}`)
@@ -35,6 +43,11 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
+        if (members.value.length === 0) {
+      members.value = await api('/api/members')
+      const saved = Number(localStorage.getItem('currentUserId'))
+      currentUserId.value = saved || members.value[0]?.id || null
+    }
     list.value = await api(`/api/applications?projectId=${projectId}`)
         summary.value = await api(`/api/projects/${projectId}/summary`)
   } catch (e) {
@@ -58,7 +71,6 @@ async function submit() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         projectId,
-        applicantId,
         purpose: form.value.purpose,
         amount: form.value.amount,
       }),
@@ -113,12 +125,26 @@ function cancel(a) {
   run(a.id, 'cancel', { reason: v }, '已取消')
 }
 
+watch(currentUserId, (v) => {
+  if (v != null) localStorage.setItem('currentUserId', v)
+})
+
 onMounted(load)
 </script>
 
 <template>
   <div class="page">
     <h1>经费申请 · 项目 {{ projectId }}</h1>
+        <div class="toolbar">
+      <label>
+        当前身份
+        <select v-model="currentUserId">
+          <option v-for="m in members" :key="m.id" :value="m.id">
+            {{ m.name }}（{{ m.role }}）
+          </option>
+        </select>
+      </label>
+    </div>
         <div v-if="summary" class="summary">
       <span>总额 <b>{{ summary.total }}</b></span>
       <span>可用 <b>{{ summary.available }}</b></span>
@@ -178,6 +204,16 @@ onMounted(load)
 </template>
 
 <style scoped>
+.toolbar {
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+.toolbar select {
+  margin-left: 8px;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
 .page { max-width: 1100px; margin: 40px auto; font-family: system-ui, sans-serif; }
 h1 { font-size: 20px; margin-bottom: 16px; }
 .form { display: flex; gap: 8px; margin-bottom: 12px; }
