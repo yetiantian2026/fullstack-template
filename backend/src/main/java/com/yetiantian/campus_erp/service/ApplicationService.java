@@ -5,6 +5,7 @@ import com.yetiantian.campus_erp.domain.Member;
 import com.yetiantian.campus_erp.domain.Project;
 import com.yetiantian.campus_erp.domain.State;
 import com.yetiantian.campus_erp.dto.ProjectSummary;
+import com.yetiantian.campus_erp.exception.ForbiddenException;
 import com.yetiantian.campus_erp.repository.ApplicationRepository;
 import com.yetiantian.campus_erp.repository.MemberRepository;
 import com.yetiantian.campus_erp.repository.ProjectRepository;
@@ -28,7 +29,12 @@ public class ApplicationService {
 
     @Transactional
     public Application submit(Long projectId, Long applicantId, String purpose, BigDecimal amount) {
+            Member me = currentUser(applicantId);
 
+            if (!"成员".equals(me.getRole())) throw new ForbiddenException("只有项目成员可以提交申请");
+            if (projectRepository.countMembership(projectId, me.getId()) == 0) {
+                throw new ForbiddenException("你不在该项目中");
+            }
         Project project = projectRepository.findById(projectId).orElseThrow(() -> new RuntimeException("项目不存在"));
         Member applicant = memberRepository.findById(applicantId).orElseThrow(() -> new RuntimeException("申请人不存在"));
 
@@ -62,6 +68,14 @@ public class ApplicationService {
         application.setCreatedAt(LocalDateTime.now());
 
         return applicationRepository.save(application);
+    }
+
+    private Member currentUser(Long userId) {
+        if (userId == null) {
+            throw new ForbiddenException("缺少身份信息");
+        }
+        return memberRepository.findById(userId)
+                .orElseThrow(() -> new ForbiddenException("用户不存在"));
     }
 
     private Application findApplication(Long id) {

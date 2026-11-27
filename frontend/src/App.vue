@@ -71,7 +71,6 @@ async function submit() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         projectId,
-        applicantId,
         purpose: form.value.purpose,
         amount: form.value.amount,
       }),
